@@ -7,6 +7,8 @@ import cypari2
 
 pari = cypari2.Pari()
 
+
+### COMPLEX INTEGRATION IMPLEMENTATION
 def complex_quadrature(func, a, b):
     '''Computes complex integrals'''
     def real_func(x):
@@ -17,11 +19,25 @@ def complex_quadrature(func, a, b):
     imag_integral = integrate.quad(imag_func, a, b)
     return (real_integral[0] + 1j*imag_integral[0], real_integral[1:], imag_integral[1:])
 
+
+### J-FUNCTION IMPLEMENTATION
 def comp_jtau(tau):
     '''Returns j(tau)'''
     small_j = 1728 * kleinj(tau) # big J into little j
     return small_j
 
+def j_coef_asymp(n):
+    return np.exp(4*np.pi*np.sqrt(n)) / (np.sqrt(2) * n**(3/4))
+
+def j_coef(n):
+    coefs_lst = []
+    coefs = pari.laurentseries(lambda x: pari.ellj(x), n)
+    for i in coefs:
+        coefs_lst.append(i)
+    return coefs_lst
+
+
+### KANEKO RELATED CALCULATIONS
 def epsilon(D): # how does it work for n = 0 (mod 4)
     '''Finds the value of epsilon based on discriminant D'''
     if D % 4 == 1:
@@ -70,6 +86,8 @@ def val(W,ln_epsilon): # we assume input w is a list e.g. [1/2, sqrt(5)/2] if w=
     w_paren = w - w_prime
     return (1 / (2 * ln_epsilon)) * complex_quadrature(lambda x: comp_jtau((w-(w_paren * w_prime * 1j * math.e**x)) / (1-(w_paren * 1j * math.e**x))), -ln_epsilon, ln_epsilon)[0]
 
+
+### ANDERSON RELATED CALCULATIONS
 def gamma_alpha(s,r):
     '''Returns gamma_alpha from Anderson's paper'''
     if math.gcd(s,r) == 1:
@@ -111,31 +129,6 @@ def j1Q(tau,a,b,c):
         sinh2 = 2*math.pi*np.imag((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(s2,r2)[0]) / (s2 * tau + -r2))
         e1 = e_func(np.real((a*tau+b) / (s1 * tau + -r1)))
         e2 = e_func(np.real((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(s2,r2)[0]) / (s2 * tau + -r2)))
-    sinh1 = 2*math.pi*np.imag((gamma_alpha(s1,r1)[1]*tau+gamma_alpha(s1,r1)[0]) / (s1 * tau + -r1))
-    sinh2 = 2*math.pi*np.imag((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(2,r2)[0]) / (s2 * tau + -r2))
-    e1 = e_func(np.real((gamma_alpha(s1,r1)[1]*tau+gamma_alpha(s1,r1)[0]) / (s1 * tau + -r1)))
-    e2 = e_func(np.real((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(s2,r2)[0]) / (s2 * tau + -r2)))
-    return np.real(j1 - 2 * (sinh1 * e1 + sinh2 * e2))
-
-def j1Q_test(tau,a,b,c):
-    '''Computes j_{1Q} from Anderson's j-function modification'''
-    j1 = np.real(comp_jtau(tau))-744
-    if a == 0:
-        s1, r1 = 0, 1 # r1 is arbitrary
-        s2, r2 = 1, 0 # s2 is arbitrary
-    else:
-        alpha1_num, alpha1_denom, alpha2_num, alpha2_denom = [int(x) for x in list(quadratic_solver(a,b,c))]
-        alpha1_div = math.gcd(alpha1_num,alpha1_denom)
-        alpha2_div = math.gcd(alpha2_num,alpha2_denom)
-        s1, r1 = int(alpha1_num / alpha1_div), int(alpha1_denom / alpha1_denom)
-        s2, r2 = int(alpha2_num / alpha2_div), int(alpha2_denom / alpha2_denom)
-    if s1 == 0:
-        b = 1 # b is arbitrary
-        a = -(1/r1)
-        sinh1 = 2*math.pi*np.imag((a*tau+b) / (s1 * tau + -r1))
-        sinh2 = 2*math.pi*np.imag((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(s2,r2)[0]) / (s2 * tau + -r2))
-        e1 = e_func(np.real((a*tau+b) / (s1 * tau + -r1)))
-        e2 = e_func(np.real((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(s2,r2)[0]) / (s2 * tau + -r2)))
     else:
         sinh1 = 2*math.pi*np.imag((gamma_alpha(s1,r1)[1]*tau+gamma_alpha(s1,r1)[0]) / (s1 * tau + -r1))
         sinh2 = 2*math.pi*np.imag((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(2,r2)[0]) / (s2 * tau + -r2))
@@ -152,30 +145,53 @@ def anderson_int_og(a,b,c):
     sq = (b*math.sqrt(b**2-(4*a*c)))/a # the sqrt
     return complex_quadrature(lambda t: j1Q(t,a,b,c)/(nsq*np.cos(2*t)+sq*np.cos(t)+(3*b**2)/(4*a)+c+1j*(2*nsq*np.cos(t)*np.sin(t)+sq*np.sin(t))),0,np.pi)
 
-def anderson_int(a,b,c):
+def anderson_int(a,b,c): # should be the correct one?
     '''Computes the anderson integral over C_Q geodesics using parameterization (line integral)'''
     # line integral review: https://tutorial.math.lamar.edu/classes/calciii/lineintegralspti.aspx
     sq = math.sqrt(b**2-(4*a*c))/(2*a) # the sqrt
-    return complex_quadrature(lambda t: (j1Q_test(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t),a,b,c))*(-sq*np.sin(t)+1j*sq*np.cos(t))/(a*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))**2+b*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))+c**2),0.001,np.pi-0.001)
+    return complex_quadrature(lambda t: (j1Q(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t),a,b,c))*(-sq*np.sin(t)+1j*sq*np.cos(t))/(a*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))**2+b*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))+c**2),0.001,np.pi-0.001)
     # problem with Q(z,1)
 
-def anderson_int_lyapunov(a,b,c,alpha_min,alpha_plus):
+def anderson_int_lyapunov(a,b,c,alpha_min,alpha_plus): # anderson int with the lyapunov (need to edit)
     '''Computes the anderson integral over C_Q geodesics using parameterization (line integral)'''
     # line integral review: https://tutorial.math.lamar.edu/classes/calciii/lineintegralspti.aspx
     sq = math.sqrt(b**2-(4*a*c))/(2*a) # the sqrt
-    return complex_quadrature(lambda t: (j1Q_test(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t),a,b,c))*(-sq*np.sin(t)+1j*sq*np.cos(t))/(a*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))**2+b*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))+c**2),alpha_min,alpha_plus)
+    return complex_quadrature(lambda t: (j1Q(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t),a,b,c))*(-sq*np.sin(t)+1j*sq*np.cos(t))/(a*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))**2+b*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))+c**2),alpha_min,alpha_plus)
     # problem with Q(z,1)
 
+
+### BFI RELATED CALCULATIONS
 def Ei_int(x):
-    '''Computes the real function Ei(x)'''
-    return integrate.quad(lambda t: e**(-t)/t, -x, np.inf)
+    '''Computes the real function Ei(x) (mpmath documentation)'''
+    # return integrate.quad(lambda t: e**(-t)/t, -x, np.inf)
+    return ei(x)
 
-def Ei_summ(tau):
+def Ei_scratch(x):
+    '''Computes the real function Ei(x) (my code from scratch)'''
+    return integrate.quad(lambda t: -e**(-t)/t, -x, np.inf)
+
+def nge0(n):
+    '''Computes the summation for when n>0'''
     sum = 0
-    for i in range(len(pari.ellfromj(tau))):
-        sum += Ei_int(-2*np.pi*i) * pari.ellfromj(tau)[i]
+    coefs = j_coef(n+2)[2:]
+    terms = []
+    for i in range(n):
+        indice = coefs[i] * Ei_int(-2*np.pi*(i+1))
+        sum += indice
+        terms.append(indice)
+    # return terms, sum
     return sum
 
+def nle0():
+    '''Computes the summation for when n<0 (just n = -1 term)'''
+    coefs = j_coef(1)[0]
+    return coefs * Ei_int(-2*np.pi*(-1))
+
+def BFI(n): # this integral converges at n = 9, giving value approx. -100.709724331336
+    '''The BFI regularized integral'''
+    return -2*(nge0(n)+nle0())
+
+# maybe don't need anymore
 def cauchy_principal_value ( f, a, b, n ):
     cpv = CPV()
     if ( ( n % 2 ) != 0 ):
@@ -198,16 +214,13 @@ def cauchy_principal_value ( f, a, b, n ):
         value = value + w[i] * ( f ( x2 ) ) / x[i]
     return value
 
-def PV_summ(tau,a,b,n):
-    sum = 0
-    for i in range(len(pari.ellfromj(tau))):
-        sum += cauchy_principal_value(Ei_int(-2*np.pi*i),a,b,n) * pari.ellfromj(tau)[i]
-    return sum
 
-# Testing below:
+### TESTING
 
-print(np.real(val([1/2,math.sqrt(5)/2],log_epsilon(epsilon(5)))))
-print(np.real(val([-3/2,math.sqrt(5)/2],log_epsilon(epsilon(5))))) # different cntd frac, same discriminant gives same val
-print(Ei_int(-2))
+# print(np.real(val([1/2,math.sqrt(5)/2],log_epsilon(epsilon(5)))))
+# print(np.real(val([-3/2,math.sqrt(5)/2],log_epsilon(epsilon(5))))) # different cntd frac, same discriminant gives same val
+for i in range(12): # converges at n=9
+    print(i, BFI(i))
+# print(comp_jtau(0+0j))
 
 # print(val([1,math.sqrt(3)],log_epsilon(epsilon(12)))) # does not work for multiples of 4
