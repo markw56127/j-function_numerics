@@ -1,0 +1,33 @@
+@misc{kaneko2009observationsvaluesellipticmodular,
+      title={Observations on the "values" of the elliptic modular function j(tau) at real quadratics}, 
+      author={Masanobu Kaneko},
+      year={2009},
+      eprint={0905.3013},
+      archivePrefix={arXiv},
+      primaryClass={math.NT},
+      url={https://arxiv.org/abs/0905.3013}, 
+}
+
+@article{Andersen_2015,
+   title={Periods of the j
+-function along infinite geodesics and mock modular forms},
+   volume={47},
+   ISSN={0024-6093},
+   url={http://dx.doi.org/10.1112/blms/bdv011},
+   DOI={10.1112/blms/bdv011},
+   number={3},
+   journal={Bulletin of the London Mathematical Society},
+   publisher={Wiley},
+   author={Andersen, Nickolas},
+   year={2015},
+   month=mar, pages={407–417}
+}
+
+@misc{bruinier2011regularized,
+      title={Regularized theta liftings and periods of modular functions}, 
+      author={Jan H. Bruinier and Jens Funke and Ozlem Imamoglu},
+      year={2011},
+      eprint={1112.3444},
+      archivePrefix={arXiv},
+      primaryClass={id='math.NT' full_name='Number Theory' is_active=True alt_name=None in_archive='math' is_general=False description='Prime numbers, diophantine equations, analytic number theory, algebraic number theory, arithmetic geometry, Galois theory'}
+}
