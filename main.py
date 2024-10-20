@@ -1,5 +1,4 @@
 from mpmath import *
-from cauchy_principle_value import CPV
 import math
 import scipy.integrate as integrate
 import numpy as np
@@ -38,7 +37,7 @@ def j_coef(n):
 
 
 ### KANEKO RELATED CALCULATIONS
-def epsilon(D): # how does it work for n = 0 (mod 4)
+def epsilon(D):
     '''Finds the value of epsilon based on discriminant D'''
     if D % 4 == 1:
         c = 2
@@ -107,9 +106,6 @@ def e_func(x):
     '''e function for use in j1Q'''
     return np.exp(2*math.pi*1j*x)
 
-# def jmQ(m, Q, tau):
-#     j_m = np.exp(2*math.pi*1j*tau)**(-m)+np.sum()
-
 def j1Q(tau,a,b,c):
     '''Computes j_{1Q} from Anderson's j-function modification'''
     j1 = np.real(comp_jtau(tau))-744
@@ -136,34 +132,15 @@ def j1Q(tau,a,b,c):
         e2 = e_func(np.real((gamma_alpha(s2,r2)[1]*tau+gamma_alpha(s2,r2)[0]) / (s2 * tau + -r2)))
     return np.real(j1 - 2 * (sinh1 * e1 + sinh2 * e2))
 
-def anderson_int_og(a,b,c):
+def anderson_int(a,b,c):
     '''Computes the anderson integral over C_Q geodesics using parameterization (line integral)'''
-    # line integral review: https://tutorial.math.lamar.edu/classes/calciii/lineintegralspti.aspx
-    # quad = np.sqrt(b**2-(4*a*c)) / (2 * a)
-    # return complex_quadrature(lambda t: (j1Q(tau,a,b,c))*(a*(quad*np.cos(t)+(b/(2*a)))**2+b*(quad*np.cos(t)+(b/(2*a)))+c)*quad*math.sqrt((np.sin(t))**2+(np.cos(t))**2),0,np.pi)
-    nsq = (b**2-(4*a*c))/(4*a) # the non sqrt
-    sq = (b*math.sqrt(b**2-(4*a*c)))/a # the sqrt
-    return complex_quadrature(lambda t: j1Q(t,a,b,c)/(nsq*np.cos(2*t)+sq*np.cos(t)+(3*b**2)/(4*a)+c+1j*(2*nsq*np.cos(t)*np.sin(t)+sq*np.sin(t))),0,np.pi)
-
-def anderson_int(a,b,c): # should be the correct one?
-    '''Computes the anderson integral over C_Q geodesics using parameterization (line integral)'''
-    # line integral review: https://tutorial.math.lamar.edu/classes/calciii/lineintegralspti.aspx
     sq = math.sqrt(b**2-(4*a*c))/(2*a) # the sqrt
     return complex_quadrature(lambda t: (j1Q(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t),a,b,c))*(-sq*np.sin(t)+1j*sq*np.cos(t))/(a*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))**2+b*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))+c**2),0.001,np.pi-0.001)
-    # problem with Q(z,1)
-
-def anderson_int_lyapunov(a,b,c,alpha_min,alpha_plus): # anderson int with the lyapunov (need to edit)
-    '''Computes the anderson integral over C_Q geodesics using parameterization (line integral)'''
-    # line integral review: https://tutorial.math.lamar.edu/classes/calciii/lineintegralspti.aspx
-    sq = math.sqrt(b**2-(4*a*c))/(2*a) # the sqrt
-    return complex_quadrature(lambda t: (j1Q(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t),a,b,c))*(-sq*np.sin(t)+1j*sq*np.cos(t))/(a*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))**2+b*(sq*np.cos(t)+(b/(2*a))+1j*sq*np.sin(t))+c**2),alpha_min,alpha_plus)
-    # problem with Q(z,1)
 
 
 ### BFI RELATED CALCULATIONS
 def Ei_int(x):
     '''Computes the real function Ei(x) (mpmath documentation)'''
-    # return integrate.quad(lambda t: e**(-t)/t, -x, np.inf)
     return ei(x)
 
 def Ei_scratch(x):
@@ -179,7 +156,6 @@ def nge0(n):
         indice = coefs[i] * Ei_int(-2*np.pi*(i+1))
         sum += indice
         terms.append(indice)
-    # return terms, sum
     return sum
 
 def nle0():
@@ -190,37 +166,3 @@ def nle0():
 def BFI(n): # this integral converges at n = 9, giving value approx. -100.709724331336
     '''The BFI regularized integral'''
     return -2*(nge0(n)+nle0())
-
-# maybe don't need anymore
-def cauchy_principal_value ( f, a, b, n ):
-    cpv = CPV()
-    if ( ( n % 2 ) != 0 ):
-        print ( '' )
-        print ( 'cauchy_principal_value - Fatal error!' )
-        print ( '  N must be even.' )
-        raise Exception ( 'cauchy_principal_value - Fatal error.' )
-    #
-    #  Get the Gauss-Legendre rule.
-    #
-    [ x, w ] = cpv.legendre_set (n)
-    #
-    #  Estimate the integral.
-    #
-    value = 0.0
-    for i in range ( 0, n ):
-        x2 = ( ( 1.0 - x[i] ) * a   \
-            + ( 1.0 + x[i] ) * b ) \
-            /   2.0
-        value = value + w[i] * ( f ( x2 ) ) / x[i]
-    return value
-
-
-### TESTING
-
-# print(np.real(val([1/2,math.sqrt(5)/2],log_epsilon(epsilon(5)))))
-# print(np.real(val([-3/2,math.sqrt(5)/2],log_epsilon(epsilon(5))))) # different cntd frac, same discriminant gives same val
-for i in range(12): # converges at n=9
-    print(i, BFI(i))
-# print(comp_jtau(0+0j))
-
-# print(val([1,math.sqrt(3)],log_epsilon(epsilon(12)))) # does not work for multiples of 4
